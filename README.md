@@ -72,8 +72,6 @@ python -m scripts.train --manifest data/processed/manifest.jsonl \
   --config configs/unet.json --out outputs/unet --device auto
 ```
 
-Optional CPU check: `python -m scripts.smoke --out outputs/smoke`. This uses small toy arrays to check training, checkpoint loading, evaluation, and inference.
-
 For CUDA, use the appropriate [PyTorch build](https://pytorch.org/get-started/locally/).
 
 ### Infer and evaluate

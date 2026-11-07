@@ -34,5 +34,7 @@ docs/validated_environment.json
 *.receipt.json
 ._*
 
-# Developer tests stay local.
+# Development checks stay local.
 tests/
+scripts/smoke.py
+.github/workflows/check.yml
