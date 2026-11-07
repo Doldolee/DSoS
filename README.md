@@ -10,12 +10,12 @@ Related study: [Detecting Muscle Activation Using Ultrasound Speed of Sound Inve
 
 ### Goal 0 — Deep learning and research preparation
 
-- Study [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/2025/) ([lecture videos](https://www.youtube.com/watch?v=2fq9wYslV0A), [notes](https://cs231n.github.io/)) to understand tensors, backpropagation, CNNs, regression, and dataset splits etc....
-- Read [Computing Speed-of-Sound From Ultrasound: User-Agnostic Recovery and a New Benchmark](https://doi.org/10.1109/TBME.2023.3327147) to understand how to acquire data, preprocess ultrasound signals, and train a model for SoS estimation.
+- Study [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/2025/) ([lecture videos](https://www.youtube.com/watch?v=2fq9wYslV0A), [notes](https://cs231n.github.io/)) to understand tensors, backpropagation, CNNs, regression, and dataset splits. The course starts with NumPy and includes [PyTorch exercises](https://cs231n.github.io/assignments2025/assignment2/).
+- Read [Computing Speed-of-Sound From Ultrasound: User-Agnostic Recovery and a New Benchmark](https://doi.org/10.1109/TBME.2023.3327147) (see also the references below) to understand how to acquire data, preprocess ultrasound signals, and train a model for SoS estimation.
 
 ### Goal 1 — Simulation training and evaluation
 
-Train a U-Net on [Feigin simulations](https://doi.org/10.1109/TBME.2023.3327147) ([dataset](https://huggingface.co/datasets/laughingrice/Ultrasound_planewave_sos_inversion)) and lab-generated QUASOS-based simulations ([QUASOS setup reference](https://qulab.medphysics.wisc.edu/ieee-tuffc-quasos-challenge/)). Estimate spatial SoS maps from IQ inputs and evaluate model on simulation data.
+Train a U-Net on [Feigin simulations](https://doi.org/10.1109/TBME.2023.3327147) ([dataset](https://huggingface.co/datasets/laughingrice/Ultrasound_planewave_sos_inversion)) and lab-generated QUASOS-based simulations ([QUASOS setup reference](https://qulab.medphysics.wisc.edu/ieee-tuffc-quasos-challenge/)). Estimate spatial SoS maps from IQ inputs and evaluate the model on simulation data.
 
 **RF → IQ → U-Net → spatial SoS**
 
@@ -25,7 +25,7 @@ Obtain the [Waterloo muscle dataset](https://huggingface.co/datasets/nvidia/Open
 
 ### Goal 3 — Generative data augmentation
 
-Train a SoS-conditioned GAN or diffusion model that generates additional RF/IQ data directly. Add the generated data to the training dataset and test whether SoS estimation improved.
+Train a SoS-conditioned GAN or diffusion model that generates additional RF/IQ data directly. Add the generated data to the training dataset and test whether SoS estimation improves.
 
 ## Repository guide
 
@@ -48,7 +48,7 @@ Each lab NPZ contains the following arrays plus coordinates and acquisition meta
 
 | Field | Shape | Meaning |
 |---|---|---|
-| `rf` | `[2048,64]` | Time × RX; 0° plane-wave crop, central64 RX |
+| `rf` | `[2048,64]` | Time × RX; 0° plane-wave crop, central 64 RX |
 | `iq` | `[2,2048,64]` | I/Q × time × RX; model input |
 | `sos` | `[256,128]` | Depth × lateral, m/s; training target |
 | `att` | `[256,128]` | dB/cm at 5 MHz; stored separately |
@@ -72,9 +72,9 @@ python -m scripts.train --manifest data/processed/manifest.jsonl \
   --config configs/unet.json --out outputs/unet --device auto
 ```
 
-Settings: `configs/unet.json`. Input IQ uses per-sample RMS normalization; target statistics use training data only. Equal-domain validation MAE selects `best.pt`. Resume with `--resume outputs/unet/last.pt`.
+Optional CPU check: `python -m scripts.smoke --out outputs/smoke`. This uses small toy arrays to check training, checkpoint loading, evaluation, and inference.
 
-Quick environment check: `python -m scripts.smoke --out outputs/smoke` (toy data only). For CUDA, use the appropriate [PyTorch build](https://pytorch.org/get-started/locally/).
+For CUDA, use the appropriate [PyTorch build](https://pytorch.org/get-started/locally/).
 
 ### Infer and evaluate
 
@@ -87,7 +87,7 @@ python -m scripts.evaluate --manifest data/processed/manifest.jsonl \
   --checkpoint outputs/unet/best.pt --split test --out outputs/test --device auto
 ```
 
-Inference saves a SoS NPY and GT/prediction/error PNG. Evaluation reports MAE, RMSE, and bias in m/s. Full-data research training has not been run for this starter repository.
+Inference saves a SoS NPY and GT/prediction/error PNG. Evaluation reports MAE, RMSE, and bias in m/s.
 
 ## References
 
