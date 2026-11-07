@@ -26,7 +26,8 @@ Obtain the [Waterloo muscle dataset](https://huggingface.co/datasets/nvidia/Open
 
 ### Goal 3 — Generative data augmentation
 
-Train a SoS-conditioned GAN or diffusion model that generates additional RF/IQ data directly. Add the generated data to the training dataset and test whether SoS estimation improves.
+- Train a SoS-conditioned GAN or diffusion model that generates additional RF/IQ data directly. Add the generated data to the training dataset and test whether SoS estimation improves.
+- This generative model aims to address data scarcity in SoS estimation through additional synthetic data. It may reduce the need to collect large real-world datasets.
 
 ## Repository guide
 
