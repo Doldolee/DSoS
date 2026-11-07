@@ -1,0 +1,72 @@
+{
+  "repository": "laughingrice/Ultrasound_planewave_sos_inversion",
+  "revision": "35edec976b579694d4c0841242cc0ea2eb641e92",
+  "files": [
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0000.mat",
+      "bytes": 20680419295,
+      "sha256": "ddaf3623b37de5292f49af7bf2aa588492ae2cc828bb8b4f03e6d0607703304a"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0001.mat",
+      "bytes": 20679598658,
+      "sha256": "6aaaf9f3b4ca93a6dce468c8eedfab3d4b09e8bf2bad320dd85d752a6a682215"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0002.mat",
+      "bytes": 20679240747,
+      "sha256": "ca9917a1ba8b059d437a53fed9de95a67755b611df3065564f31c56a66ec6304"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0003.mat",
+      "bytes": 20680846181,
+      "sha256": "b8183ed3c807af93a97ac50112fa259ecc63e47752a1ab0716e5aaf0913e6114"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0004.mat",
+      "bytes": 20681501617,
+      "sha256": "c4440aef6c3a44b46a151f21400e21893e42a32f25e6fc5fe32b9c6bf71fcc1e"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0005.mat",
+      "bytes": 20681484806,
+      "sha256": "446451fb6af0e6ce0ea43f661fccfec888d2ed54098407945c1a14e9638cbacc"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0006.mat",
+      "bytes": 20678496924,
+      "sha256": "e1eeaf1110861f04ad05bc69b7be8acd61f562d6f5903f84171748095e534946"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0007.mat",
+      "bytes": 20679986641,
+      "sha256": "676563e8de04f179ca71022e1ea8b927c3ac75940f93e3d675675a20de402ea5"
+    },
+    {
+      "split": "train",
+      "path": "train/multiplane_5_0_0008.mat",
+      "bytes": 20681213269,
+      "sha256": "9b95847d0958b9574312d6264377e970bd6dd8602a2b65afc76c376458a47e4a"
+    },
+    {
+      "split": "val",
+      "path": "validation/multiplane_5_0_0010.mat",
+      "bytes": 20679453086,
+      "sha256": "c8fccb07360dfa8dc5c32cd1976b060d046bfd35ffe7d2f51e3429d6accae763"
+    },
+    {
+      "split": "test",
+      "path": "test/multiplane_5_0_0009.mat",
+      "bytes": 20681369761,
+      "sha256": "1271b52c1dba1128417401d807ea6aa4c778832a0fd0d69d25ecfd32cb102c7b"
+    }
+  ]
+}

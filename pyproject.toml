@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "disability-muscle-sos"
+version = "0.1.0"
+description = "Student baseline for ultrasound IQ to spatial speed-of-sound regression"
+requires-python = ">=3.10"
+dependencies = ["torch>=2.2", "numpy>=1.26", "scipy>=1.11", "h5py>=3.10", "matplotlib>=3.8", "huggingface-hub>=0.24"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["scripts*"]
+
+[tool.setuptools.package-data]
+scripts = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,12 @@
+{
+  "input_shape": [2, 2048, 64],
+  "output_shape": [256, 128],
+  "base_channels": 16,
+  "epochs": 100,
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "seed": 17,
+  "num_workers": 0,
+  "balanced_domains": true
+}

@@ -1,0 +1,38 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.DS_Store
+outputs/
+*.pt
+*.pth
+*.mat
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.zip
+*.pem
+*.key
+.env
+
+# Publish only the prepared lab samples and their required split manifest.
+data/*
+!data/processed/
+data/processed/*
+!data/processed/quasos/
+data/processed/quasos/*
+!data/processed/quasos/manifest.jsonl
+!data/processed/quasos/cases/
+!data/processed/quasos/cases/*.npz
+
+# Keep auxiliary descriptions and execution records local.
+docs/validated_environment.json
+**/dataset_info.json
+**/files.sha256.json
+*.receipt.json
+._*
+
+# Developer tests stay local.
+tests/
