@@ -10,7 +10,8 @@ Related study: [Detecting Muscle Activation Using Ultrasound Speed of Sound Inve
 
 ### Goal 0 — Deep learning and research preparation
 
-- Study [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/2025/) ([lecture videos](https://www.youtube.com/watch?v=2fq9wYslV0A), [notes](https://cs231n.github.io/)) to understand tensors, backpropagation, CNNs, regression, and dataset splits. The course starts with NumPy and includes [PyTorch exercises](https://cs231n.github.io/assignments2025/assignment2/).
+- Study [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/2025/) ([lecture videos](https://www.youtube.com/watch?v=2fq9wYslV0A), [notes](https://cs231n.stanford.edu/2025/schedule.html)) to understand tensors, backpropagation, CNNs, regression, and dataset splits. The course starts with NumPy and includes [PyTorch exercises](https://cs231n.github.io/assignments2025/assignment2/).
+- Watch Lectures **1–8 and 12–14** first. These provide sufficient background to begin this project.
 - Read [Computing Speed-of-Sound From Ultrasound: User-Agnostic Recovery and a New Benchmark](https://doi.org/10.1109/TBME.2023.3327147) (see also the references below) to understand how to acquire data, preprocess ultrasound signals, and train a model for SoS estimation. You can also check the [paper's code](https://huggingface.co/laughingrice/dl_us_sos_inversion/tree/main).
 
 ### Goal 1 — Simulation training and evaluation
