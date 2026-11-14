@@ -2,7 +2,7 @@
 
 ## Research outline
 
-This project develops AI models that estimate tissue properties from ultrasound IQ data. We will test whether the predictions distinguish stages of acute liver injury in a rat model of acute liver failure (ALF). We will first train a model to estimate speed of sound (SoS) and attenuation (ATT) together using existing simulation data. If needed, we will add a module to estimate shear wave speed (SWS). We will train this module on synthetic data that resemble liver tissue.
+This project develops AI models to estimate tissue properties from ultrasound IQ data. The aim is to test whether these estimates distinguish stages of acute liver injury in a rat model of acute liver failure (ALF). The first model will learn to estimate speed of sound (SoS) and attenuation (ATT) together from existing simulation data. If needed, a later stage will add a shear wave speed (SWS) model trained on synthetic data that resemble liver tissue.
 
 Related study: [Wearable bioadhesive ultrasound shear wave elastography](https://doi.org/10.1126/sciadv.adk8426), Liu et al., *Science Advances*, 2024.
 
@@ -70,9 +70,9 @@ Each lab NPZ file contains the arrays below, plus coordinates and acquisition me
 
 ![IQ input and SoS/ATT maps](docs/assets/data_example.png)
 
-The U-Net outputs two maps in **SoS, ATT** channel order, with shape `[B,2,256,128]`. We standardize each property using the mean and standard deviation of its training maps. This puts their errors on comparable scales. The loss gives equal weight to the L1 errors for the two standardized properties. During training, we sample the Feigin and lab datasets with equal probability.
+The U-Net outputs two maps in **SoS, ATT** channel order, with shape `[B,2,256,128]`. Each target is standardized using the mean and standard deviation of its training maps. This puts the errors on comparable scales, so the L1 loss can give both properties equal weight. The training sampler draws from the Feigin and lab datasets with equal probability.
 
-We select the checkpoint using validation data. We divide each property's MAE by its training standard deviation, then average the scores with equal weight for both properties and both datasets. We keep the checkpoint with the lowest score.
+Validation data determine which checkpoint to keep. The selection score uses each property's MAE divided by its training standard deviation. These normalized errors are averaged with equal weight for both properties and both datasets. The checkpoint with the lowest score is saved.
 
 ### Train
 
