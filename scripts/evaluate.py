@@ -1,4 +1,4 @@
-"""Evaluate a frozen checkpoint on labeled simulation data."""
+"""Evaluate a frozen joint SoS/ATT checkpoint on labeled simulation data."""
 import argparse
 import csv
 from torch.utils.data import DataLoader

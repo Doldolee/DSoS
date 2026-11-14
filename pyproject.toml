@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "disability-muscle-sos"
 version = "0.1.0"
-description = "Student baseline for ultrasound IQ to spatial speed-of-sound regression"
+description = "Student U-Net baseline for joint ultrasound speed-of-sound and attenuation estimation"
 requires-python = ">=3.10"
 dependencies = ["torch>=2.2", "numpy>=1.26", "scipy>=1.11", "h5py>=3.10", "matplotlib>=3.8", "huggingface-hub>=0.24"]
 

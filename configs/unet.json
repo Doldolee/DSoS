@@ -1,6 +1,7 @@
 {
   "input_shape": [2, 2048, 64],
   "output_shape": [256, 128],
+  "targets": ["sos", "att"],
   "base_channels": 16,
   "epochs": 100,
   "batch_size": 32,

@@ -1,6 +1,6 @@
 """Simulation data utilities: IO, RF/IQ processing, datasets, preparation and metrics.
 
-Command line: python -m scritps.util --help
+Command line: python -m scripts.util --help
 """
 import argparse
 import csv
@@ -16,6 +16,40 @@ import numpy as np
 from scipy.signal import butter, resample_poly, sosfiltfilt
 import torch
 from torch.utils.data import Dataset
+
+
+TARGETS = ("sos", "att")
+TARGET_UNITS = {"sos": "m/s", "att": "dB/cm at 5 MHz"}
+CHECKPOINT_FORMAT_VERSION = 2
+
+
+def validate_joint_config(config):
+    if config.get("targets") != list(TARGETS):
+        raise ValueError("Joint U-Net requires targets=['sos', 'att'] in that order")
+
+
+def target_scaling(norm):
+    means = np.asarray([norm["sos_mean_m_s"], norm["att_mean_db_cm"]], dtype=np.float32)[:, None, None]
+    stds = np.asarray([norm["sos_std_m_s"], norm["att_std_db_cm"]], dtype=np.float32)[:, None, None]
+    if not np.isfinite(means).all() or not np.isfinite(stds).all() or np.any(stds <= 0):
+        raise ValueError("Invalid joint target normalization")
+    return means, stds
+
+
+def denormalize_targets(values, norm):
+    """Convert [...,2,z,x] predictions in SoS/ATT order to physical units."""
+    values = np.asarray(values)
+    if values.ndim < 3 or values.shape[-3] != len(TARGETS):
+        raise ValueError("Expected joint predictions with shape [...,2,z,x]")
+    means, stds = target_scaling(norm)
+    return values * stds + means
+
+
+def validate_checkpoint(ckpt):
+    if ckpt.get("format_version") != CHECKPOINT_FORMAT_VERSION:
+        raise ValueError("Expected a joint SoS/ATT checkpoint (format version 2); SoS-only checkpoints are incompatible")
+    validate_joint_config(ckpt["config"])
+    target_scaling(ckpt["normalization"])
 
 
 
@@ -166,6 +200,7 @@ def input_tensor(iq):
 
 class IQDataset(Dataset):
     def __init__(self, manifest, split, config, normalization):
+        validate_joint_config(config)
         self.root = Path(manifest).resolve().parent
         self.rows = [r for r in read_rows(manifest) if r["split"] == split]
         if not self.rows:
@@ -179,34 +214,41 @@ class IQDataset(Dataset):
         r = self.rows[index]
         with np.load(self.root / r["path"], allow_pickle=False) as a:
             x = input_tensor(a["iq"])
-            y = np.asarray(a["sos"], dtype=np.float32).copy()
-        if list(x.shape) != self.config["input_shape"] or list(y.shape) != self.config["output_shape"]:
+            if any(key not in a for key in TARGETS):
+                raise ValueError(f"Both SoS and ATT targets are required: {r['id']}")
+            y = np.stack([np.asarray(a[key], dtype=np.float32) for key in TARGETS])
+        if list(x.shape) != self.config["input_shape"] or list(y.shape) != [len(TARGETS), *self.config["output_shape"]]:
             raise ValueError(f"Shape mismatch: {r['id']}: {list(x.shape)}, {list(y.shape)}")
         if not np.isfinite(y).all():
-            raise ValueError("Nonfinite SoS target")
-        y = (y - self.norm["sos_mean_m_s"]) / self.norm["sos_std_m_s"]
-        return x, torch.from_numpy(y[None]), r["id"], r["dataset"]
+            raise ValueError("Nonfinite SoS/ATT target")
+        means, stds = target_scaling(self.norm)
+        y = (y - means) / stds
+        return x, torch.from_numpy(y), r["id"], r["dataset"]
 
 
 def fit_normalization(manifest):
     """Fit target mean/std on TRAIN maps only; stream one target at a time."""
     root = Path(manifest).resolve().parent
     count = 0
-    total = square = 0.0
+    total = np.zeros(len(TARGETS), dtype=np.float64)
+    square = np.zeros_like(total)
     rows = [r for r in read_rows(manifest) if r["split"] == "train"]
     for r in rows:
         with np.load(root / r["path"], allow_pickle=False) as a:
-            y = np.asarray(a["sos"], dtype=np.float64)
+            if any(key not in a for key in TARGETS):
+                raise ValueError(f"Both SoS and ATT targets are required: {r['id']}")
+            y = np.stack([np.asarray(a[key], dtype=np.float64) for key in TARGETS])
         if not np.isfinite(y).all():
             raise ValueError("Nonfinite training target")
-        count += y.size
-        total += float(y.sum())
-        square += float(np.square(y).sum())
+        count += y[0].size
+        total += y.sum(axis=(1, 2))
+        square += np.square(y).sum(axis=(1, 2))
     if not count:
         raise ValueError("No training targets")
     mean = total / count
-    std = max(float(np.sqrt(max(square / count - mean ** 2, 0))), 1.0)
-    return {"sos_mean_m_s": mean, "sos_std_m_s": std, "fit_split": "train",
+    std = np.maximum(np.sqrt(np.maximum(square / count - mean ** 2, 0)), [1.0, 1e-3])
+    return {"sos_mean_m_s": float(mean[0]), "sos_std_m_s": float(std[0]),
+            "att_mean_db_cm": float(mean[1]), "att_std_db_cm": float(std[1]), "fit_split": "train",
             "train_cases": len(rows), "input_normalization": "per-acquisition IQ RMS, signal only"}
 
 
@@ -326,28 +368,48 @@ def merge(manifests, output):
 @torch.no_grad()
 def evaluate(model, loader, norm, device):
     model.eval()
-    stats = defaultdict(lambda: {"n": 0, "abs": 0., "square": 0., "signed": 0., "cases": 0})
+    _, stds = target_scaling(norm)
+    stats = defaultdict(lambda: {"n": 0, "abs": np.zeros(2), "square": np.zeros(2), "signed": np.zeros(2), "cases": 0})
     rows = []
     for x, y, ids, domains in loader:
         pred = model(x.to(device)).cpu().numpy()
-        error = (pred - y.numpy()) * norm["sos_std_m_s"]
+        if pred.shape != tuple(y.shape) or pred.shape[1] != len(TARGETS):
+            raise ValueError("Model and labels must both have shape [B,2,z,x]")
+        error = (pred.astype(np.float64) - y.numpy().astype(np.float64)) * stds.astype(np.float64)
         for i, (sample_id, domain) in enumerate(zip(ids, domains)):
             e = error[i].astype(np.float64)
             if not np.isfinite(e).all():
                 raise ValueError("Nonfinite model prediction")
             s = stats[domain]
-            s["n"] += e.size
-            s["abs"] += float(np.abs(e).sum())
-            s["square"] += float(np.square(e).sum())
-            s["signed"] += float(e.sum())
+            s["n"] += e[0].size
+            s["abs"] += np.abs(e).sum(axis=(1, 2))
+            s["square"] += np.square(e).sum(axis=(1, 2))
+            s["signed"] += e.sum(axis=(1, 2))
             s["cases"] += 1
-            rows.append({"id": sample_id, "dataset": domain, "mae_m_s": float(np.abs(e).mean()),
-                         "rmse_m_s": float(np.sqrt(np.square(e).mean())), "bias_m_s": float(e.mean())})
-    summary = {d: {"cases": s["cases"], "pixels": s["n"], "mae_m_s": s["abs"]/s["n"],
-                    "rmse_m_s": (s["square"]/s["n"])**0.5, "bias_m_s": s["signed"]/s["n"]}
-               for d, s in stats.items()}
-    return {"by_dataset": summary, "macro_mae_m_s": float(np.mean([s["mae_m_s"] for s in summary.values()])),
-            "units": "m/s", "evaluation": "whole-map synthetic SoS accuracy"}, rows
+            row = {"id": sample_id, "dataset": domain}
+            for j, (target, unit) in enumerate(zip(TARGETS, ("m_s", "db_cm"))):
+                row.update({f"{target}_mae_{unit}": float(np.abs(e[j]).mean()),
+                            f"{target}_rmse_{unit}": float(np.sqrt(np.square(e[j]).mean())),
+                            f"{target}_bias_{unit}": float(e[j].mean())})
+            rows.append(row)
+    if not rows:
+        raise ValueError("No cases to evaluate")
+    summary = {}
+    for domain, s in stats.items():
+        result = {"cases": s["cases"], "pixels_per_target": s["n"]}
+        mae = s["abs"] / s["n"]
+        for j, (target, unit) in enumerate(zip(TARGETS, ("m_s", "db_cm"))):
+            result.update({f"{target}_mae_{unit}": float(mae[j]),
+                           f"{target}_rmse_{unit}": float(np.sqrt(s["square"][j] / s["n"])),
+                           f"{target}_bias_{unit}": float(s["signed"][j] / s["n"])})
+        result["normalized_mae"] = float(np.mean(mae / stds[:, 0, 0]))
+        summary[domain] = result
+    return {"by_dataset": summary,
+            "macro_sos_mae_m_s": float(np.mean([s["sos_mae_m_s"] for s in summary.values()])),
+            "macro_att_mae_db_cm": float(np.mean([s["att_mae_db_cm"] for s in summary.values()])),
+            "macro_normalized_mae": float(np.mean([s["normalized_mae"] for s in summary.values()])),
+            "units": TARGET_UNITS, "target_order": list(TARGETS),
+            "evaluation": "whole-map synthetic SoS and ATT accuracy"}, rows
 
 
 def verify(root):
@@ -366,6 +428,7 @@ def verify(root):
 def load_model(checkpoint, device):
     from .model import UNet
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    validate_checkpoint(ckpt)
     model = UNet(ckpt["config"]["base_channels"], ckpt["config"]["output_shape"]).to(device)
     model.load_state_dict(ckpt["model"], strict=True)
     model.eval()

@@ -1,4 +1,4 @@
-"""Compact U-Net regression baseline from channel IQ to a SoS grid."""
+"""Compact U-Net from channel IQ to joint SoS and attenuation maps."""
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -21,7 +21,8 @@ class UNet(nn.Module):
         self.e0 = block(2, b, stride=(4, 1))
         self.e1, self.e2, self.e3 = block(b, b*2), block(b*2, b*4), block(b*4, b*8)
         self.d2, self.d1, self.d0 = block(b*12, b*4), block(b*6, b*2), block(b*3, b)
-        self.head = nn.Conv2d(b, 1, 1)
+        # Output channel order is fixed: SoS, then ATT.
+        self.head = nn.Conv2d(b, 2, 1)
 
     def forward(self, x):
         a = self.e0(x)
